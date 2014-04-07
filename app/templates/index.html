@@ -1,0 +1,68 @@
+{% extends "bootstrap/base.html" %}
+
+{% block styles %}
+{{super()}}
+    <link rel="stylesheet" href="{{url_for('.static', filename='css/style.css')}}">
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
+{% endblock %}
+
+{% block title %}Map{% endblock %}
+{% block scripts %}
+    {{super()}}
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="http:////cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+    <script type="text/javascript" charset="utf-8">
+	var marker = [{"geometry": {"coordinates": [49.4538723, 11.0772978], "type": "Point"}, "id": null, "properties": {}, "type": "Feature"}];
+
+	function onEachFeature(feature, layer) {
+		if (feature.properties && feature.properties.popupContent) {
+			popupContent = feature.properties.popupContent;
+		}
+
+		layer.bindPopup(popupContent);
+	};
+
+	function add_marker(geojson) {
+		map.removeLayer(marker);
+		marker = new L.geoJson(geojson, {
+				style: function (feature) {
+					return feature.properties && feature.properties.style;
+				},
+
+				onEachFeature: onEachFeature,
+
+				pointToLayer: function (feature, latlng) {
+					return L.circleMarker(latlng, {
+						radius: 8,
+						fillColor: "#ff7800",
+						color: "#000",
+						weight: 1,
+						opacity: 1,
+						fillOpacity: 0.8
+					});
+				}
+			});
+		map.addLayer(marker);
+	};
+
+	var map = L.map('map').setView([49.4538723, 11.0772978], 14);
+
+	L.tileLayer('http://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png', {
+		attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
+		subdomains: 'abcd',
+		minZoom: 0,
+		maxZoom: 20
+	}).addTo(map);
+
+	$(document).ready(function(){
+			var socket = io.connect('http://' + document.domain + ':' + location.port + '/map');
+			socket.on('my response', function(geojson) {
+				add_marker(geojson);
+			});
+	});
+    </script>
+{% endblock %}
+{% block content %}
+    <div id="map"></div>
+{% endblock %}
