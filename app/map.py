@@ -59,11 +59,19 @@ def create_geojson():
 
 def emit_coords():
     '''check every 60 seconds'''
+    global coords
     while True:
         time.sleep(60)
         coords = create_geojson()
         print coords
         socketio.emit('my response', coords, namespace='/map')
+
+
+def heartbeat():
+    '''send every 10 seconds a message'''
+    while True:
+        time.sleep(10)
+        socketio.emit('heartbeat', 'heartbeat', namespace='/map')
 
 
 @app.route('/')
@@ -74,11 +82,15 @@ def index():
 @socketio.on('connect', namespace='/map')
 def map_connect():
     print 'Client connected'
-    coords = create_geojson()
-    print coords
     socketio.emit('my response', coords, namespace='/map')
+
+
+@socketio.on('disconnect', namespace='/map')
+def map_disconnect():
+    print 'Client disconnected'
 
 
 if __name__ == '__main__':
     threading.Thread(target=emit_coords).start()
+    threading.Thread(target=heartbeat).start()
     socketio.run(app)
