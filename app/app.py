@@ -32,9 +32,9 @@ def is_here(station):
 
     for i in departures:
         if i.departure_in_min == 0:
-            return True, i.trip_id, i.latitude, i.longitude, i.direction, i.product
+            return True, i.trip_id, i.latitude, i.longitude, i.direction, i.product, i.prognosis
         else:
-            return False, i.trip_id, i.latitude, i.longitude, i.direction, i.product
+            return False, i.trip_id, i.latitude, i.longitude, i.direction, i.product, i.prognosis
 
 
 def create_geojson():
@@ -49,11 +49,12 @@ def create_geojson():
 
     here_list = []
     for i in station_list:
-        station = is_here(i)
-        if station[0] is True:
-            here_list.append(geojson.Feature(geometry=geojson.Point((station[3],
-                station[2])), properties={'id': station[1], 'product':
-                    station[5], 'popupContent': '&rarr; ' + station[4]}))
+        try:
+            station = is_here(i)
+            if station[0]:
+                here_list.append(geojson.Feature(geometry=geojson.Point((station[3], station[2])), properties={'id': station[1], 'product': station[5], 'prognosis': station[6], 'popupContent': '&rarr; ' + station[4]}))
+        except Exception:
+            pass
 
     return geojson.FeatureCollection(here_list)
 

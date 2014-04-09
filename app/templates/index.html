@@ -23,14 +23,19 @@
 		layer.bindPopup(popupContent);
 	};
 
-	function color_switcher(product) {
-		switch (product) {
-			case 'Bus': return "#428bca";
-			case 'UBahn': return "#5cb85c";
-			case 'Tram': return "#f0ad4e";
+	function color_switcher(product, prognosis) {
+		if (prognosis) {
+			switch (product) {
+				case 'Bus': return "#428bca";
+				case 'UBahn': return "#5cb85c";
+				case 'Tram': return "#f0ad4e";
+			}
+		}
+		else {
+			return "#d9534f";
 		}
 
-	}
+	};
 
 	function add_marker(geojson) {
 		map.removeLayer(marker);
@@ -44,7 +49,7 @@
 				pointToLayer: function (feature, latlng) {
 					return L.circleMarker(latlng, {
 						radius: 8,
-						fillColor: color_switcher(feature.properties.product),
+						fillColor: color_switcher(feature.properties.product, feature.properties.prognosis),
 						color: "#000",
 						weight: 1,
 						opacity: 1,
