@@ -50,7 +50,7 @@ def create_geojson():
     here_list = []
     for i in station_list:
         station = is_here(i)
-        if station[0] == True:
+        if station[0] is True:
             here_list.append(geojson.Feature(geometry=geojson.Point((station[3],
                 station[2])), properties={'id': station[1], 'product':
                     station[5], 'popupContent': '&rarr; ' + station[4]}))
