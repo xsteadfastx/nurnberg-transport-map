@@ -3,7 +3,6 @@ import time
 import threading
 import geojson
 import vagquery
-from random import uniform
 from flask import Flask, render_template
 from flask_bootstrap import Bootstrap
 from flask.ext.socketio import SocketIO, emit
@@ -33,9 +32,9 @@ def is_here(station):
 
     for i in departures:
         if i.departure_in_min == 0:
-            return True, i.trip_id, i.latitude, i.longitude, i.direction
+            return True, i.trip_id, i.latitude, i.longitude, i.direction, i.product
         else:
-            return False, i.trip_id, i.latitude, i.longitude, i.direction
+            return False, i.trip_id, i.latitude, i.longitude, i.direction, i.product
 
 
 def create_geojson():
@@ -52,7 +51,9 @@ def create_geojson():
     for i in station_list:
         station = is_here(i)
         if station[0] == True:
-            here_list.append(geojson.Feature(geometry=geojson.Point((station[3], station[2])), properties={'id': station[1], 'popupContent': '&rarr; ' + station[4]}))
+            here_list.append(geojson.Feature(geometry=geojson.Point((station[3],
+                station[2])), properties={'id': station[1], 'product':
+                    station[5], 'popupContent': '&rarr; ' + station[4]}))
 
     return geojson.FeatureCollection(here_list)
 
@@ -62,9 +63,12 @@ def emit_coords():
     global coords
     while True:
         time.sleep(60)
-        coords = create_geojson()
-        print coords
-        socketio.emit('my response', coords, namespace='/map')
+        try:
+            coords = create_geojson()
+            print coords
+            socketio.emit('my response', coords, namespace='/map')
+        except Exception:
+            pass
 
 
 def heartbeat():
@@ -76,17 +80,23 @@ def heartbeat():
 
 @app.route('/')
 def index():
+    '''rendering the map'''
     return render_template('index.html')
 
 
 @socketio.on('connect', namespace='/map')
 def map_connect():
+    ''' try to send coords on connect'''
     print 'Client connected'
-    socketio.emit('my response', coords, namespace='/map')
+    try:
+        socketio.emit('my response', coords, namespace='/map')
+    except Exception:
+        pass
 
 
 @socketio.on('disconnect', namespace='/map')
 def map_disconnect():
+    '''what to do on disconnect'''
     print 'Client disconnected'
 
 
