@@ -37,8 +37,8 @@ def is_here(station):
             return False, i.trip_id, i.latitude, i.longitude, i.direction, i.product, i.prognosis
 
 
-def create_geojson():
-    '''getting everything together and returns a geojson'''
+def build_feature():
+    '''checks list of stations and emits geojson'''
     if not os.path.exists('station.lst'):
         get_station_list()
 
@@ -47,36 +47,29 @@ def create_geojson():
         for i in f.readlines():
             station_list.append(i.strip())
 
-    here_list = []
     for i in station_list:
         try:
             station = is_here(i)
             if station[0]:
-                here_list.append(geojson.Feature(geometry=geojson.Point((station[3], station[2])), properties={'id': station[1], 'product': station[5], 'prognosis': station[6], 'popupContent': '&rarr; ' + station[4]}))
+                feature = geojson.Feature(geometry=geojson.Point((station[3], station[2])), properties={'id': station[1], 'product': station[5], 'prognosis': station[6], 'popupContent': '&rarr; ' + station[4]})
+                #print feature
+                socketio.emit('my response', feature, namespace='/map')
+
         except Exception:
             pass
 
-    return geojson.FeatureCollection(here_list)
+
+def emit_thread():
+    '''function to put in a thread'''
+    while True:
+        build_feature()
 
 
-def emit_coords():
-    '''check every 60 seconds'''
-    global coords
+def remove_markers():
+    '''delete markers on interval'''
     while True:
         time.sleep(60)
-        try:
-            coords = create_geojson()
-            print coords
-            socketio.emit('my response', coords, namespace='/map')
-        except Exception:
-            pass
-
-
-def heartbeat():
-    '''send every 10 seconds a message'''
-    while True:
-        time.sleep(10)
-        socketio.emit('heartbeat', 'heartbeat', namespace='/map')
+        socketio.emit('remove markers', 'remove', namespace='/map')
 
 
 @app.route('/')
@@ -89,10 +82,6 @@ def index():
 def map_connect():
     ''' try to send coords on connect'''
     print 'Client connected'
-    try:
-        socketio.emit('my response', coords, namespace='/map')
-    except Exception:
-        pass
 
 
 @socketio.on('disconnect', namespace='/map')
@@ -102,6 +91,6 @@ def map_disconnect():
 
 
 if __name__ == '__main__':
-    threading.Thread(target=emit_coords).start()
-    threading.Thread(target=heartbeat).start()
+    threading.Thread(target=emit_thread).start()
+    threading.Thread(target=remove_markers).start()
     socketio.run(app)

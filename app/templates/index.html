@@ -37,8 +37,9 @@
 
 	};
 
+
+	var markers = new Array()
 	function add_marker(geojson) {
-		map.removeLayer(marker);
 		marker = new L.geoJson(geojson, {
 				style: function (feature) {
 					return feature.properties && feature.properties.style;
@@ -56,8 +57,9 @@
 						fillOpacity: 0.8
 					});
 				}
-			});
+		});
 		map.addLayer(marker);
+		markers[marker._leaflet_id] = marker;
 	};
 
 	var map = L.map('map').setView([49.4538723, 11.0772978], 14);
@@ -73,6 +75,11 @@
 			var socket = io.connect('http://' + document.domain + ':' + location.port + '/map');
 			socket.on('my response', function(geojson) {
 				add_marker(geojson);
+			});
+			socket.on('remove markers', function(remove) {
+				for (var i in markers) {
+					map.removeLayer(markers[i]);
+				}
 			});
 	});
     </script>
